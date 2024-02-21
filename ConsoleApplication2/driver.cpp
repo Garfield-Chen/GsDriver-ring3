@@ -8,6 +8,7 @@ bool driver::init()
 		printf("驱动已加载\n");
 		return true;
 	}
+	printf("开始加载驱动\n");
 	Load();
 	if (!test())
 	{
@@ -61,6 +62,16 @@ bool driver::verify()
 	if (status != ERROR_成功)
 	{
 		printf("验证失败: %x\n", status);
+		return false;
+	}
+	return true;
+}
+bool driver::inject(PINJECT_DATA data, DWORD size)
+{
+	NTSTATUS status = call('0002', data, size);
+	if (status != ERROR_成功)
+	{
+		printf("离线注入失败: %x\n", status);
 		return false;
 	}
 	return true;
@@ -426,3 +437,22 @@ uint64_t driver::find_pattern(const char * sigin_code, ULONG32 sigin_code_size, 
 	}
 	return ret_address;
 }
+
+bool driver::hide_window(HWND window, UINT flag)
+{
+	typedef struct _HIDW_WINDOW_BUFFER {
+		HWND hWnd;
+		UINT Flags;
+	} HIDW_WINDOW_BUFFER, * PHIDW_WINDOW_BUFFER;
+	HIDW_WINDOW_BUFFER buffer{ 0 };
+	buffer.hWnd = window;
+	buffer.Flags = flag;
+	NTSTATUS status = call('0021', &buffer, sizeof(buffer));
+	if (status != ERROR_成功)
+	{
+		printf("窗口反截失败: %x\n", status);
+		return false;
+	}
+	return true;
+}
+

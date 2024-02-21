@@ -25,10 +25,13 @@ int main()
 	printf("模块地址: %llx\n", d.get_module_address("notepad.exe"));
 	char x = 'b';
 	d.read(base_address, (uint64_t)&x, 1);
+	printf("%c\n", x);
 	x = 'b';
 	d.write1((uint64_t)&x, d.get_base_address(), 1);
 	d.read(base_address, (uint64_t) & x, 1);
 	printf("%c\n", x);
+	x = 'M';
+	d.write1((uint64_t)&x, d.get_base_address(), 1);
 	auto start = GetTickCount64();
 	for (size_t i = 0; i < 10000; i++)
 	{
