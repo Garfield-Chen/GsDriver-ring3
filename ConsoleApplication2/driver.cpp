@@ -350,6 +350,7 @@ bool driver::query_memory(uint64_t address, PMEMORY_BASIC_INFORMATION info)
 	QUERY_VIRTUAL_MEMORY_BUFFER buffer{ 0 };
 	buffer.hProcessId = pid;
 	buffer.MemAddress = reinterpret_cast<PVOID64>(address);
+	buffer.OutBuffer = info;
 	NTSTATUS status = call('0015', &buffer, sizeof(buffer));
 	if (status != ERROR_³É¹¦)
 	{
