@@ -26,9 +26,6 @@
     <ClInclude Include="driver.h">
       <Filter>源文件</Filter>
     </ClInclude>
-    <ClInclude Include="自定声明.h">
-      <Filter>源文件</Filter>
-    </ClInclude>
     <ClInclude Include="driver_data.h">
       <Filter>源文件</Filter>
     </ClInclude>

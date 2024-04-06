@@ -137,7 +137,6 @@
     <ClInclude Include="driver_data.h" />
     <ClInclude Include="loader.h" />
     <ClInclude Include="nt.hpp" />
-    <ClInclude Include="自定声明.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
