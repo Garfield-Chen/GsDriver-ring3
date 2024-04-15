@@ -3,6 +3,19 @@
 
 #include <iostream>
 #include "driver.h"
+#include "dll.h"
+
+auto GetTextHashW(PCWSTR Str) -> UINT {
+
+	UINT32 Hash = NULL;
+
+	while (Str != NULL && *Str) {
+
+		Hash = (UINT32)(65599 * (Hash + (*Str++) + (*Str > 64 && *Str < 91 ? 32 : 0)));
+	}
+
+	return Hash;
+}
 
 int main()
 {
@@ -38,8 +51,8 @@ int main()
 		d.read<int>(base_address);
 	}
 	printf("cost: %llums\n", GetTickCount64() - start);
-	d.force_delete("C:\\a.txt");
-	d.kill_process("explorer.exe");
+	//d.force_delete("C:\\a.txt");
+	//d.kill_process("explorer.exe");
 	uint64_t alloc = d.alloc_memory(10, PAGE_READWRITE, FALSE);
 	d.free_memory(alloc);
 	driver::MOUSE_INPUT_DATA mid{ 0 };
@@ -48,7 +61,13 @@ int main()
 	mid.ButtonFlags = 0;
 	mid.UnitId = 1;
 	d.mouse(&mid);
-	d.spoof_hwid(0);
+	//d.spoof_hwid(0);
+	driver::INJECT_DATA data{ 0 };
+	data.InjectHash = GetTextHashW(L"notepad.exe");
+	data.InjectBits = 64;
+	data.InjectData = Dll1;
+	data.InjectSize = sizeof(Dll1);
+	d.inject(&data, sizeof(data));
 	return 0;
 }
 

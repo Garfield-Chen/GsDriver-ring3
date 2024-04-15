@@ -15,28 +15,19 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ConsoleApplication2.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="driver.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
+    <ClInclude Include="framework.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="driver.h">
+    <ClCompile Include="dllmain.cpp">
       <Filter>源文件</Filter>
-    </ClInclude>
-    <ClInclude Include="driver_data.h">
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
       <Filter>源文件</Filter>
-    </ClInclude>
-    <ClInclude Include="loader.h">
-      <Filter>源文件</Filter>
-    </ClInclude>
-    <ClInclude Include="nt.hpp">
-      <Filter>源文件</Filter>
-    </ClInclude>
-    <ClInclude Include="dll.h">
-      <Filter>源文件</Filter>
-    </ClInclude>
+    </ClCompile>
   </ItemGroup>
 </Project>
