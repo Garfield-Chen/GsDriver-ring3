@@ -366,3 +366,11 @@ typedef struct _WIN1X_MMVAD_SHORT {
 	/*+0x034*/    ULONG LongFlags;
 	/*+0x038*/    struct _MI_VAD_EVENT_BLOCK* EventList;
 } WIN1X_MMVAD_SHORT, *WIN1X_PMMVAD_SHORT;
+
+typedef struct _SYSTEM_SERVICE_DESCRIPTOR_TABLE {
+
+	PULONG_PTR ServiceTableBase;
+	PULONG ServiceCounterTableBase;
+	ULONG_PTR NumberOfServices;
+	LPBYTE ParamTableBase;
+} SYSTEM_SERVICE_DESCRIPTOR_TABLE, * PSYSTEM_SERVICE_DESCRIPTOR_TABLE;

@@ -1,4 +1,4 @@
-src_name = "出租驱动_外壳.sys"
+src_name = "../x64/Release/GsDriver.sys"
 dest_name = "driver_data.h"
 
 src_file = open(src_name, "rb")

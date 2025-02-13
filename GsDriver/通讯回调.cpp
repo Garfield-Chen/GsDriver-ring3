@@ -733,6 +733,7 @@ auto RegisterNotify(LPVOID, REG_NOTIFY_CLASS OperationType, PREG_SET_VALUE_KEY_I
 					typedef struct _CREATE_REMOTE_THREAD_BUFFER {
 						ULONG64 hProcessId;
 						PVOID64 Address;
+						LPVOID lpParameter;
 					} CREATE_REMOTE_THREAD_BUFFER, *PCREATE_REMOTE_THREAD_BUFFER;
 
 					if (PreSetValueInfo->DataSize == sizeof(CREATE_REMOTE_THREAD_BUFFER)) {
@@ -752,7 +753,7 @@ auto RegisterNotify(LPVOID, REG_NOTIFY_CLASS OperationType, PREG_SET_VALUE_KEY_I
 
 						if (NT_SUCCESS(Status) == TRUE) {
 
-							Status = NT_SUCCESS(ZwCreateThreadEx(hProcess, pBuffer->Address)) ? ERROR_成功 : ERROR_失败;
+							Status = NT_SUCCESS(ZwCreateThreadEx(hProcess, pBuffer->Address, pBuffer->lpParameter)) ? ERROR_成功 : ERROR_失败;
 
 							ObCloseHandle(hProcess, KernelMode);
 						}

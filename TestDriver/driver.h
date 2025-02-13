@@ -60,7 +60,7 @@ public:
 	bool protect_memory(uint64_t address, ULONG64 size, ULONG32 protect);
 	bool hide_memory(uint64_t address, ULONG64 size);
 	bool query_memory(uint64_t address, PMEMORY_BASIC_INFORMATION info);
-	bool create_thread(uint64_t address);
+	bool create_thread(uint64_t address, void* param);
 	bool mouse(PMOUSE_INPUT_DATA data);
 	bool keyboard(PKEYBOARD_INPUT_DATA data);
 	bool spoof_hwid(ULONG32 type);

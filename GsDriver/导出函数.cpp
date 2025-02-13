@@ -296,7 +296,7 @@ auto ZwProtectWindow(HWND hWnd, UINT Flags)->BOOL {
 	return Status;
 }
 
-auto ZwCreateThreadEx(HANDLE ProcessHandle, LPVOID StratAddress)->NTSTATUS {
+auto ZwCreateThreadEx(HANDLE ProcessHandle, LPVOID StratAddress, LPVOID lpParameter)->NTSTATUS {
 
 	typedef NTSTATUS(NTAPI *fn_ZwCreateThreadEx)(PHANDLE, ACCESS_MASK, LPVOID, HANDLE, LPVOID, LPVOID, ULONG, SIZE_T, SIZE_T, SIZE_T, LPVOID);
 
@@ -319,7 +319,7 @@ auto ZwCreateThreadEx(HANDLE ProcessHandle, LPVOID StratAddress)->NTSTATUS {
 
 		CHAR pOldMode = SetPreviousMode(KernelMode);
 
-		Status = _ZwCreateThreadEx(&hThread, THREAD_ALL_ACCESS, &Object, ProcessHandle, StratAddress, NULL, DynamicData->WinVersion <= WINVER_7 ? 0 : 2, 0, 0, 0, NULL);
+		Status = _ZwCreateThreadEx(&hThread, THREAD_ALL_ACCESS, &Object, ProcessHandle, StratAddress, lpParameter, DynamicData->WinVersion <= WINVER_7 ? 0 : 2, 0, 0, 0, NULL);
 
 		if (NT_SUCCESS(Status)) {
 
@@ -1192,4 +1192,152 @@ auto GetSystemModuleSection(LPVOID ModuleBase)->LPVOID {
 	}
 
 	return pEntry;
+}
+
+auto RvaToOffset(PIMAGE_NT_HEADERS64 ImageHead, ULONG RVA, ULONG FileSize) -> ULONG {
+
+	ULONG Result = NULL;
+
+	PIMAGE_SECTION_HEADER ImageSection = IMAGE_FIRST_SECTION(ImageHead);
+
+	USHORT NumberOfSections = ImageHead->FileHeader.NumberOfSections;
+
+	for (USHORT i = NULL; i < NumberOfSections; i++) {
+
+		if (ImageSection->VirtualAddress <= RVA && (ImageSection->VirtualAddress + ImageSection->Misc.VirtualSize) > RVA) {
+
+			RVA -= ImageSection->VirtualAddress;
+
+			RVA += ImageSection->PointerToRawData;
+
+			Result = RVA < FileSize ? RVA : 0;
+
+			break;
+		}
+		else
+			ImageSection++;
+	}
+
+	return Result;
+}
+
+auto GetExportOffset(LPBYTE FileData, ULONG FileSize, LPCSTR ExportName) -> ULONG {
+
+	ULONG Result = NULL;
+
+	PIMAGE_DOS_HEADER DosHeader = (PIMAGE_DOS_HEADER)FileData;
+
+	PIMAGE_NT_HEADERS64 NtHeaders = (PIMAGE_NT_HEADERS64)(FileData + DosHeader->e_lfanew);
+
+	PIMAGE_DATA_DIRECTORY ImageDataDirectory = NtHeaders->OptionalHeader.DataDirectory;
+
+	ULONG ExportDirectoryRva = ImageDataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress;
+
+	ULONG ExportDirectorySize = ImageDataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size;
+
+	ULONG ExportDirectoryOffset = RvaToOffset(NtHeaders, ExportDirectoryRva, FileSize);
+
+	if (ExportDirectoryOffset != NULL) {
+
+		PIMAGE_EXPORT_DIRECTORY ExportDirectory = (PIMAGE_EXPORT_DIRECTORY)(FileData + ExportDirectoryOffset);
+
+		ULONG NumberOfNames = ExportDirectory->NumberOfNames;
+
+		ULONG AddressOfFunctionsOffset = RvaToOffset(NtHeaders, ExportDirectory->AddressOfFunctions, FileSize);
+
+		if (AddressOfFunctionsOffset != NULL) {
+
+			ULONG AddressOfNameOrdinalsOffset = RvaToOffset(NtHeaders, ExportDirectory->AddressOfNameOrdinals, FileSize);
+
+			if (AddressOfNameOrdinalsOffset != NULL) {
+
+				ULONG AddressOfNamesOffset = RvaToOffset(NtHeaders, ExportDirectory->AddressOfNames, FileSize);
+
+				if (AddressOfNamesOffset != NULL) {
+
+					PULONG AddressOfNames = (PULONG)(FileData + AddressOfNamesOffset);
+
+					PULONG AddressOfFunctions = (PULONG)(FileData + AddressOfFunctionsOffset);
+
+					PUSHORT AddressOfNameOrdinals = (PUSHORT)(FileData + AddressOfNameOrdinalsOffset);
+
+					for (ULONG i = NULL; i < NumberOfNames; i++) {
+
+						ULONG CurrentNameOffset = RvaToOffset(NtHeaders, AddressOfNames[i], FileSize);
+
+						if (CurrentNameOffset != NULL) {
+
+							LPCSTR CurrentName = (LPCSTR)(FileData + CurrentNameOffset);
+
+							ULONG CurrentFunctionRva = AddressOfFunctions[AddressOfNameOrdinals[i]];
+
+							if (CurrentFunctionRva >= ExportDirectoryRva && CurrentFunctionRva < ExportDirectoryRva + ExportDirectorySize) {
+
+								continue;
+							}
+							else {
+
+								if (!strcmp(CurrentName, ExportName)) {
+
+									Result = RvaToOffset(NtHeaders, CurrentFunctionRva, FileSize);
+
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return Result;
+}
+
+auto GetTableFunByName(PSYSTEM_SERVICE_DESCRIPTOR_TABLE pServiceTableBase, LPBYTE FileData, ULONG FileSize, LPCSTR ExportName) -> LPBYTE {
+
+	LPBYTE Result = NULL;
+
+	ULONG ExportOffset = GetExportOffset(FileData, FileSize, ExportName);
+
+	if (ExportOffset != NULL) {
+
+		INT32 SSDTIndex = -1;
+
+		LPBYTE RoutineData = FileData + ExportOffset;
+
+		for (ULONG i = NULL; i < 32 && ExportOffset + i < FileSize; i++) {
+
+			if (RoutineData[i] == 0xB8) {
+
+				SSDTIndex = *(INT32*)(RoutineData + i + 1);
+
+				break;
+			}
+		}
+
+		if (SSDTIndex > -1 && SSDTIndex < pServiceTableBase->NumberOfServices) {
+
+			Result = (LPBYTE)((LPBYTE)pServiceTableBase->ServiceTableBase + (((PLONG)pServiceTableBase->ServiceTableBase)[SSDTIndex] >> 4));
+		}
+	}
+
+	return Result;
+}
+
+auto GetServiceTableBase(LPBYTE pKernelBase) -> LPBYTE {
+
+	LPBYTE Result = NULL;
+
+	if (pKernelBase != NULL) {
+		LPBYTE pFound = SearchSignForImage(pKernelBase, "\x4C\x8D\x15\x00\x00\x00\x00\x4C\x8D\x1D\x00\x00\x00\x00\xF7", "xxx????xxx????x", strlen("xxx????xxx????x"));
+
+		if (pFound != NULL) {
+
+			Result = ResolveRelativeAddress(pFound, 3);
+
+		}
+	}
+
+	return Result;
 }

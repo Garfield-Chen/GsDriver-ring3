@@ -24,7 +24,7 @@ auto ZwProtectVirtualMemory(HANDLE, LPVOID)->NTSTATUS;
 
 auto ZwProtectWindow(HWND, UINT)->BOOL;
 
-auto ZwCreateThreadEx(HANDLE, LPVOID)->NTSTATUS;
+auto ZwCreateThreadEx(HANDLE, LPVOID, LPVOID lpParameter=NULL)->NTSTATUS;
 
 auto ZwQueryKeyValue(LPCWSTR, LPCWSTR, PKEY_VALUE_PARTIAL_INFORMATION*)->NTSTATUS;
 
@@ -96,4 +96,10 @@ auto GetSystemDrvJumpHook(PVOID, PHOOK_NOTIFY_BUFFER)->LPBYTE;
 
 auto GetModuleBaseForHash(UINT32)->LPBYTE;
 
-auto GetSystemModuleSection(LPVOID)->LPVOID;
+auto RvaToOffset(PIMAGE_NT_HEADERS64, ULONG, ULONG) -> ULONG;
+
+auto GetExportOffset(LPBYTE, ULONG, LPCSTR) -> ULONG;
+
+auto GetTableFunByName(PSYSTEM_SERVICE_DESCRIPTOR_TABLE, LPBYTE, ULONG, LPCSTR) -> LPBYTE;
+
+auto GetServiceTableBase(LPBYTE) -> LPBYTE;

@@ -386,15 +386,17 @@ bool driver::query_memory(uint64_t address, PMEMORY_BASIC_INFORMATION info)
 	}
 	return true;
 }
-bool driver::create_thread(uint64_t address)
+bool driver::create_thread(uint64_t address, void* param)
 {
 	typedef struct _CREATE_REMOTE_THREAD_BUFFER {
 		ULONG64 hProcessId;
 		PVOID64 Address;
+		LPVOID lpParameter;
 	} CREATE_REMOTE_THREAD_BUFFER, * PCREATE_REMOTE_THREAD_BUFFER;
 	CREATE_REMOTE_THREAD_BUFFER buffer{ 0 };
 	buffer.hProcessId = pid;
 	buffer.Address = reinterpret_cast<PVOID64>(address);
+	buffer.lpParameter = param;
 	NTSTATUS status = call('0016', &buffer, sizeof(buffer));
 	if (status != ERROR_成功)
 	{
