@@ -33,7 +33,7 @@ int main()
 
 	uint64_t base_address = 0;
 	printf("基地址: %llx\n", base_address = d.get_base_address());
-	printf("模块地址: %llx\n", d.get_module_address("notepad.exe"));
+	printf("模块地址: %llx\n", d.get_module_address("explorer.exe"));
 	char x = 'b';
 	d.read(base_address, (uint64_t)&x, 1);
 	printf("%c\n", x);
