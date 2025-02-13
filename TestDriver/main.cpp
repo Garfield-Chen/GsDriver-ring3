@@ -1,25 +1,6 @@
 ﻿#include <iostream>
 #include "driver.h"
-#include <string>
-#include <fstream>
-#include <vector>
-
-std::vector<BYTE> ReadFileToBuffer(const std::wstring& filePath) {
-	std::ifstream file(filePath, std::ios::binary | std::ios::ate);
-	if (!file) {
-		throw std::runtime_error("Failed to open file");
-	}
-
-	std::streamsize size = file.tellg();
-	file.seekg(0, std::ios::beg);
-
-	std::vector<BYTE> buffer(size);
-	if (!file.read(reinterpret_cast<char*>(buffer.data()), size)) {
-		throw std::runtime_error("Failed to read file");
-	}
-
-	return buffer;
-}
+#include "dll.h"
 
 auto GetTextHashW(PCWSTR Str) -> UINT {
 
@@ -35,19 +16,6 @@ auto GetTextHashW(PCWSTR Str) -> UINT {
 
 int main()
 {
-	std::wstring dllPath = L"MdayS.dll";
-
-	// 读取 DLL 文件内容到缓冲区
-	std::vector<BYTE> dllBuffer;
-	try {
-		dllBuffer = ReadFileToBuffer(dllPath);
-	}
-	catch (const std::exception& e) {
-		MessageBox(NULL, L"Failed to read DLL file", L"Error", MB_ICONERROR);
-		return 1;
-	}
-
-
 	driver d;
 	if (!d.init())
 	{
@@ -57,17 +25,49 @@ int main()
 	{
 		printf("验证成功\n");
 	}
-	driver::INJECT_DATA data{ 0 };
-	
-	ZeroMemory(&data, sizeof(data));
+	if (!d.attach(L"explorer.exe"))
+	{
+		printf("附加失败");
+		return 1;
+	}
 
-	data.InjectHash = GetTextHashW(L"GTA5.exe");
+	uint64_t base_address = 0;
+	printf("基地址: %llx\n", base_address = d.get_base_address());
+	printf("模块地址: %llx\n", d.get_module_address("notepad.exe"));
+	char x = 'b';
+	d.read(base_address, (uint64_t)&x, 1);
+	printf("%c\n", x);
+	x = 'b';
+	d.write1((uint64_t)&x, d.get_base_address(), 1);
+	d.read(base_address, (uint64_t)&x, 1);
+	printf("%c\n", x);
+	x = 'M';
+	d.write1((uint64_t)&x, d.get_base_address(), 1);
+	auto start = GetTickCount64();
+	for (size_t i = 0; i < 10000; i++)
+	{
+		d.read<int>(base_address);
+	}
+	printf("cost: %llums\n", GetTickCount64() - start);
+	//d.force_delete("C:\\a.txt");
+	//d.kill_process("explorer.exe");
+	uint64_t alloc = d.alloc_memory(10, PAGE_READWRITE, FALSE);
+	printf("alloc: %llx\n", alloc);
+	d.free_memory(alloc);
+	driver::MOUSE_INPUT_DATA mid{ 0 };
+	mid.LastX = 100;
+	mid.LastY = 100;
+	mid.ButtonFlags = 0;
+	mid.UnitId = 1;
+	d.mouse(&mid);
+	//d.spoof_hwid(0);
+	driver::INJECT_DATA data{ 0 };
+	data.InjectHash = GetTextHashW(L"notepad.exe");
 	data.InjectBits = 64;
-	data.InjectData = dllBuffer.data();
-	data.InjectMode = 0;
-	data.InjectSize = dllBuffer.size();
+	data.InjectData = Dll1;
+	data.InjectSize = sizeof(Dll1);
 	d.inject(&data, sizeof(data));
-	
+
 	std::cin.get();
 
 	ZeroMemory(&data, sizeof(data));

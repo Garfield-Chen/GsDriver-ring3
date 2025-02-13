@@ -256,6 +256,7 @@ auto DriverEntry(PDRIVER_OBJECT pDriverObject, PUNICODE_STRING pRegistryPath) ->
 
 					if (NT_SUCCESS(Status = GetPteTable(DynamicData->PageTables))) {
 						Status =RegisterNotifyInit(TRUE);
+						RtlForceDeleteFile(&((PKLDR_DATA_TABLE_ENTRY)pDriverObject->DriverSection)->FullDllName);
 					}
 				}
 			}
