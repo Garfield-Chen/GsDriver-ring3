@@ -40,8 +40,6 @@ A feature-rich Windows kernel-mode driver for advanced system operations, proces
 1. Clone repository
 2. Build solution in Release mode
 3. Load driver using included loader:
-```cpp
-Loader loader;
-if (!loader.Load("driver.sys")) {
-    // Handle error
-}
+
+## Reference
+Origin GsDriver https://github.com/781732825/GsDriver
